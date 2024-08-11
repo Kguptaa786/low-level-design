@@ -10,10 +10,10 @@ public class ExecutiveServiceImpl implements ExecutiveService {
         this.executiveStore = executiveStore;
     }
     @Override
-    public boolean addExecutive(String name, String employeeId, IssueType specialisation) {
-        Executive executive = new Executive(name, employeeId, specialisation);
-        executiveStore.addExecutive(executive);
-        return true;
+    public Executive add(String name, String employeeId, IssueType specialisation) {
+        Executive executive =  Executive.create(name, employeeId, specialisation);
+        executiveStore.create(executive);
+        return executive;
     }
 
 }

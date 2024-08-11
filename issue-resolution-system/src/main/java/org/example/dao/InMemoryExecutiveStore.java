@@ -7,28 +7,42 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class InMemoryExecutiveStore implements ExecutiveStore{
+    private final Map<String,Executive> executiveMap;
     private final Map<IssueType, List<Executive>> specialisationAndExecutiveMap;
-
     public InMemoryExecutiveStore() {
+        executiveMap = new HashMap<>();
         this.specialisationAndExecutiveMap = new HashMap<>();
     }
 
     @Override
-    public Executive addExecutive(Executive executive) {
-        if(specialisationAndExecutiveMap.containsKey(executive.getSpecialisation())) {
-            specialisationAndExecutiveMap.get(executive.getSpecialisation()).add(executive);
-        } else {
-            List<Executive>  specialisedExecutiveList = new ArrayList<>();
-            specialisedExecutiveList.add(executive);
-            specialisationAndExecutiveMap.put(executive.getSpecialisation(), specialisedExecutiveList);
-        }
+    public Executive create(Executive executive) {
+        executiveMap.put(executive.getEmployeeId(), executive);
+        specialisationAndExecutiveMap.computeIfAbsent(executive.getSpecialisation(), key -> new ArrayList<>())
+                .add(executive);
         return executive;
     }
 
     @Override
-    public  Map<IssueType, List<Executive>> getSpecialisationAndExecutivesMap(){
-        return specialisationAndExecutiveMap;
+    public List<Executive> findAllNotEqualSpecialisation(IssueType issueType) {
+        return executiveMap.values().stream()
+                .filter(executive -> !executive.getSpecialisation().equals(issueType))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean update(Executive executive) {
+        if(executiveMap.containsKey(executive.getEmployeeId())){
+            executiveMap.put(executive.getEmployeeId(), executive);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public List<Executive> findBySpecialisation(IssueType issueType) {
+        return specialisationAndExecutiveMap.getOrDefault(issueType, new ArrayList<>());
     }
 }

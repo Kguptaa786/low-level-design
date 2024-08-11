@@ -4,9 +4,10 @@ import org.example.enums.IssueType;
 import org.example.model.Executive;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ExecutiveStore {
-    Executive addExecutive(Executive executive);
-    Map<IssueType, List<Executive>> getSpecialisationAndExecutivesMap();
+    Executive create(Executive executive);
+    boolean update(Executive executive);
+    List<Executive> findBySpecialisation(IssueType issueType);
+    List<Executive> findAllNotEqualSpecialisation(IssueType issueType);
 }

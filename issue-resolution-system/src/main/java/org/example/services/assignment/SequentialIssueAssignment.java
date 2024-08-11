@@ -1,20 +1,15 @@
 package org.example.services.assignment;
 
 import org.example.dao.ExecutiveStore;
-import org.example.dao.InMemoryExecutiveStore;
-import org.example.dao.InMemoryIssueStore;
 import org.example.dao.IssueStore;
 import org.example.enums.IssueStatus;
-import org.example.enums.IssueType;
 import org.example.model.Executive;
 import org.example.model.Issue;
 
 import java.util.List;
-import java.util.Map;
 
 
 public class SequentialIssueAssignment implements IssueAssignmentStrategy {
-
     private final ExecutiveStore executiveStore;
     private final IssueStore issueStore;
     public SequentialIssueAssignment(ExecutiveStore executiveStore, IssueStore issueStore){
@@ -22,37 +17,35 @@ public class SequentialIssueAssignment implements IssueAssignmentStrategy {
         this.issueStore = issueStore;
     }
     @Override
-    public boolean assignIssue(Issue issue) {
+    public boolean assign(Issue issue) {
+        List<Executive> specialisedExecutives = executiveStore.findBySpecialisation(issue.getType());
+        List<Executive> nonSpecialisedExecutives = executiveStore.findAllNotEqualSpecialisation(issue.getType());
 
-        Map<IssueType, List<Executive>> specialisationAndExecutiveMap = executiveStore.getSpecialisationAndExecutivesMap();
+        Executive executive = specialisedExecutives.stream()
+                .filter(e -> e.getIsAvailable().get())
+                .findFirst()
+                .orElse(null);
 
-        for(Map.Entry<IssueType, List<Executive>> entry: specialisationAndExecutiveMap.entrySet()){
-            IssueType specialisation = entry.getKey();
-            List<Executive> executiveList = entry.getValue();
-
-            // assign the issue to specialised team
-            if(specialisation == issue.getIssueType()){
-                for(Executive executive: executiveList){
-                    if(executive.isAvailable()){
-                        issue.setIssueStatus(IssueStatus.ASSIGNED);
-                        issue.setEmployeeId(executive.getEmployeeId());
-                        executive.setAvailable(false);
-                        return true;
-                    }
-                }
-            } else { // assign the issue to non-specialised team
-                for(Executive executive: executiveList){
-                    if(executive.isAvailable()){
-                        issue.setIssueStatus(IssueStatus.ASSIGNED);
-                        issue.setEmployeeId(executive.getEmployeeId());
-                        executive.setAvailable(false);
-                        return true;
-                    }
-                }
-            }
+        if (executive == null) {
+            executive = nonSpecialisedExecutives.stream()
+                    .filter(e -> e.getIsAvailable().get())
+                    .findFirst()
+                    .orElse(null);
         }
 
-        // no executive are available
+        if (executive == null && !specialisedExecutives.isEmpty()) {
+            int randomIndex = (int) (Math.random() * specialisedExecutives.size());
+            executive = specialisedExecutives.get(randomIndex);
+        }
+
+        if (executive != null) {
+            executive.getIsAvailable().compareAndSet(true, false);
+            issue.setEmployeeId(executive.getEmployeeId());
+            issue.setStatus(IssueStatus.ASSIGNED);
+            executiveStore.update(executive);
+            return true;
+        }
+
         return false;
     }
 }

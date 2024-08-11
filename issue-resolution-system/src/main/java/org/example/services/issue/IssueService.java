@@ -8,9 +8,9 @@ import org.example.model.Issue;
 import java.util.List;
 
 public interface IssueService {
-    boolean createIssue(String orderId, String description, IssueType issueType);
-    List<Issue> fetchIssues(IssueStatus issueStatus, IssueType issueType);
-    boolean updateIssue(String orderId, IssueStatus issueStatus);
-    boolean resolveIssue(String orderId);
+    Issue create(String orderId, String description, IssueType issueType);
+    List<Issue> fetch(IssueStatus issueStatus, IssueType issueType, Integer pageNumber, Integer pageLimit);
+    void update(String orderId, IssueStatus newStatus);
+    void resolve(String orderId);
 
 }
